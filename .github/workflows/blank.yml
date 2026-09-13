@@ -41,7 +41,7 @@ jobs:
           fi
 
           printf '%s\n' "$DOWNLOAD_URLS" > urls.txt
-          gallery-dl -i urls.txt -D "./insta" > /dev/null 2>&1 #-o "filename=test.{extension}"
+          gallery-dl -i urls.txt -D "./insta" #> /dev/null 2>&1 -o "filename=test.{extension}"
 
       - name: Upload to rclone 
         run: |
