@@ -1,0 +1,68 @@
+name: vkjw
+
+on:
+  workflow_dispatch:
+
+env:
+  RCLONE_DESTINATION: "wojf:trt"
+
+jobs:
+  gallerydlmultipledownload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          python -m pip install --upgrade pip
+          python -m pip install gallery-dl
+          curl https://rclone.org/install.sh | sudo bash
+          mkdir -p ./insta
+          chmod 777 ./insta
+
+      - name: Prepare download URLs
+        env:
+          DOWNLOAD_URLS: ${{ secrets.DOWNLOAD_URLS }}
+        run: |
+          set -e
+
+          if [ -z "$DOWNLOAD_URLS" ]; then
+            echo "ERROR: DOWNLOAD_URLS secret is empty or not configured."
+            exit 1
+          fi
+
+          printf '%s\n' "$DOWNLOAD_URLS" > urls.txt
+
+      - name: Upload to rclone 
+        run: |
+          echo "$RCLONE_CONFIG" > rclone.conf
+          attempts=0
+          max_attempts=3
+          success=false
+          while [ $attempts -lt $max_attempts ]; do  
+            rclone --config rclone.conf copy ./insta $RCLONE_DESTINATION --exclude "*.txt" --transfers=10 --checkers=20 --low-level-retries 5 --retries 5 --retries-sleep 500ms --user-agent "ISV|rclone.org|rclone/v.1.73.1" --timeout 0 --contimeout 0 --backup-dir=wojf:backup --drime-upload-cutoff=128M
+
+            if [ $? -eq 0 ]; then
+              success=true
+              break
+            else
+              echo "Attempt $((attempts + 1)) failed, retrying..."
+              attempts=$((attempts + 1))
+              sleep 5
+            fi
+          done
+          if [ "$success" = false ]; then
+            echo "Failed to upload after $max_attempts attempts"
+            exit 1
+          fi
+        env:
+          RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
