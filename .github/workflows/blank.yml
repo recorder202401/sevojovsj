@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  RCLONE_DESTINATION: "wojf:trt"
+  RCLONE_DESTINATION: "wojf:temp"
 
 jobs:
   gallerydlmultipledownload:
